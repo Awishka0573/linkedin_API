@@ -5,13 +5,14 @@ const LINKEDIN_TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken'
 const LINKEDIN_USERINFO_URL = 'https://api.linkedin.com/v2/userinfo'
 const LINKEDIN_ASSETS_URL = 'https://api.linkedin.com/v2/assets?action=registerUpload'
 const LINKEDIN_UGC_POST_URL = 'https://api.linkedin.com/v2/ugcPosts'
+const LINKEDIN_EVENTS_URL = 'https://api.linkedin.com/rest/events'
 
 export const createLinkedInAuthUrl = (state) => {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: env.LINKEDIN_CLIENT_ID,
     redirect_uri: env.LINKEDIN_REDIRECT_URI,
-    scope: 'openid profile email w_member_social',
+    scope: 'openid profile email w_member_social rw_events r_events',
     prompt: 'select_account consent',
     max_age: 0,
     state,
@@ -186,6 +187,71 @@ export const createPost = async (accessToken, personUrn, text, mediaAsset = null
       personUrn
     })
     const error = new Error(`Post creation failed: ${errorText}`)
+    error.status = response.status
+    throw error
+  }
+
+  return response.json()
+}
+
+export const createLinkedInEvent = async (accessToken, eventData) => {
+  // LinkedIn REST API (versioned) expects a different structure than v2
+  const payload = {
+    name: {
+      localized: {
+        'en_US': eventData.title
+      },
+      preferredLocale: {
+        country: 'US',
+        language: 'en'
+      }
+    },
+    description: {
+      localized: {
+        'en_US': {
+          text: eventData.description
+        }
+      },
+      preferredLocale: {
+        country: 'US',
+        language: 'en'
+      }
+    },
+    type: {
+      'com.linkedin.events.OnlineEvent': {
+        onlineEventUrl: eventData.onlineEventUrl
+      }
+    },
+    organizer: eventData.owner, // urn:li:person:...
+    startsAt: eventData.eventSchedule.start,
+    endsAt: eventData.eventSchedule.end,
+    discoveryMode: 'LISTED'
+  }
+
+  console.log('Creating LinkedIn Event with refined REST payload:', JSON.stringify(payload, null, 2))
+
+  // LinkedIn Events API requires the LinkedIn-Version header for versioned APIs
+  const response = await fetch(LINKEDIN_EVENTS_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-RestLi-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': '202601',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('LinkedIn Create Event Error Detailed:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      error: errorText,
+      payload: payload
+    })
+    const error = new Error(`Event creation failed: ${errorText}`)
     error.status = response.status
     throw error
   }

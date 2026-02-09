@@ -5,6 +5,7 @@ import DashboardLayout from './pages/Dashboard/DashboardLayout'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Profile from './pages/Dashboard/Profile'
 import Posts from './pages/Dashboard/Posts'
+import Events from './pages/Dashboard/Events'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -15,10 +16,12 @@ function App() {
         <Route index element={<Dashboard />} />
         <Route path="profile" element={<Profile />} />
         <Route path="posts" element={<Posts />} />
+        <Route path="events" element={<Events />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
+
 
 export default App

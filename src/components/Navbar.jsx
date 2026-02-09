@@ -5,9 +5,7 @@ const Navbar = () => {
     <header className="w-full border-b border-slate-200 bg-white/80 backdrop-blur">
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
-            OX
-          </span>
+          <img src="/logo1.png" alt="Oxymai Logo" className="h-10 w-auto shrink-0" />
           <div className="leading-tight">
             <p className="text-lg font-semibold text-slate-900">Oxymai</p>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">LinkedIn</p>
