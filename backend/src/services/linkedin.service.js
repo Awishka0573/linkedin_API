@@ -37,6 +37,10 @@ export const exchangeCodeForToken = async (code) => {
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('LinkedIn Token Exchange Error:', {
+      status: response.status,
+      error: errorText,
+    })
     const error = new Error(`Token exchange failed: ${errorText}`)
     error.status = response.status
     throw error
@@ -54,6 +58,10 @@ export const fetchLinkedInUserInfo = async (accessToken) => {
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('LinkedIn UserInfo Error:', {
+      status: response.status,
+      error: errorText,
+    })
     const error = new Error(`Userinfo request failed: ${errorText}`)
     error.status = response.status
     throw error
