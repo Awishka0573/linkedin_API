@@ -1,4 +1,18 @@
 import express from 'express'
+import dns from 'dns'
+
+// DNS Monkeypatch to force IPv4 and bypass broken IPv6 environments (ConnectTimeoutError)
+const originalLookup = dns.lookup
+dns.lookup = (hostname, options, callback) => {
+  if (typeof options === 'function') {
+    callback = options
+    options = { family: 4 }
+  } else {
+    options = { ...options, family: 4 }
+  }
+  return originalLookup(hostname, options, callback)
+}
+
 import cors from 'cors'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'

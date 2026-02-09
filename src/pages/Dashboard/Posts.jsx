@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
 const Posts = () => {
@@ -6,23 +6,49 @@ const Posts = () => {
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
     const loading = false // Managed by layout
     const [postContent, setPostContent] = useState('')
+    const [selectedFile, setSelectedFile] = useState(null)
+    const [previewUrl, setPreviewUrl] = useState(null)
     const [isPosting, setIsPosting] = useState(false)
     const [postStatus, setPostStatus] = useState({ type: '', message: '' })
+    const fileInputRef = useRef(null)
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0]
+        if (file) {
+            setSelectedFile(file)
+            const url = URL.createObjectURL(file)
+            setPreviewUrl(url)
+        }
+    }
+
+    const removeMedia = () => {
+        setSelectedFile(null)
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl)
+            setPreviewUrl(null)
+        }
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+        }
+    }
 
     const handleCreatePost = async (e) => {
         e.preventDefault()
-        if (!postContent.trim()) return
+        if (!postContent.trim() && !selectedFile) return
 
         setIsPosting(true)
         setPostStatus({ type: '', message: '' })
 
         try {
+            const formData = new FormData()
+            formData.append('text', postContent)
+            if (selectedFile) {
+                formData.append('media', selectedFile)
+            }
+
             const response = await fetch(`${apiBase}/api/posts`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: postContent }),
+                body: formData,
                 credentials: 'include',
             })
 
@@ -31,6 +57,7 @@ const Posts = () => {
             if (response.ok) {
                 setPostStatus({ type: 'success', message: 'Post shared successfully!' })
                 setPostContent('')
+                removeMedia()
                 setTimeout(() => setPostStatus({ type: '', message: '' }), 3000)
             } else {
                 throw new Error(data.error || 'Failed to share post')
@@ -70,7 +97,48 @@ const Posts = () => {
                                     className="w-full min-h-[160px] rounded-xl border border-slate-200 p-4 text-sm focus:border-emerald-300 focus:outline-none focus:ring-4 focus:ring-emerald-50 transition-all resize-none font-sans"
                                     disabled={isPosting}
                                 />
-                                <div className="flex items-center justify-between">
+
+                                {previewUrl && (
+                                    <div className="relative rounded-xl border border-slate-200 p-2 bg-slate-50">
+                                        <button
+                                            type="button"
+                                            onClick={removeMedia}
+                                            className="absolute top-4 right-4 z-10 rounded-full bg-slate-900/80 p-1.5 text-white hover:bg-slate-900 transition-colors"
+                                        >
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                        {selectedFile?.type.startsWith('image/') ? (
+                                            <img src={previewUrl} alt="Preview" className="max-h-[300px] w-full rounded-lg object-contain" />
+                                        ) : (
+                                            <video src={previewUrl} controls className="max-h-[300px] w-full rounded-lg" />
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                        accept="image/*,video/*"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                                        disabled={isPosting}
+                                    >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Photo / Video
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-4">
                                     {postStatus.message && (
                                         <div className={`flex items-center gap-2 rounded-lg px-3 py-1 text-xs font-medium ${postStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
                                             }`}>
@@ -79,7 +147,7 @@ const Posts = () => {
                                     )}
                                     <button
                                         type="submit"
-                                        disabled={isPosting || !postContent.trim()}
+                                        disabled={isPosting || (!postContent.trim() && !selectedFile)}
                                         className="ml-auto flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-200"
                                     >
                                         {isPosting ? (
@@ -140,3 +208,4 @@ const Posts = () => {
 }
 
 export default Posts
+

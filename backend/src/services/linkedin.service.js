@@ -3,6 +3,8 @@ import { env } from '../config/env.js'
 const LINKEDIN_AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
 const LINKEDIN_TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken'
 const LINKEDIN_USERINFO_URL = 'https://api.linkedin.com/v2/userinfo'
+const LINKEDIN_ASSETS_URL = 'https://api.linkedin.com/v2/assets?action=registerUpload'
+const LINKEDIN_UGC_POST_URL = 'https://api.linkedin.com/v2/ugcPosts'
 
 export const createLinkedInAuthUrl = (state) => {
   const params = new URLSearchParams({
@@ -70,9 +72,71 @@ export const fetchLinkedInUserInfo = async (accessToken) => {
   return response.json()
 }
 
-export const createPost = async (accessToken, personUrn, text) => {
-  const LINKEDIN_UGC_POST_URL = 'https://api.linkedin.com/v2/ugcPosts'
+export const registerUpload = async (accessToken, personUrn, mediaType) => {
+  const recipe = mediaType === 'IMAGE' ? 'urn:li:digitalmediaRecipe:feedshare-image' : 'urn:li:digitalmediaRecipe:feedshare-video'
 
+  const body = {
+    registerUploadRequest: {
+      recipes: [recipe],
+      owner: personUrn,
+      serviceRelationships: [
+        {
+          relationshipType: 'OWNER',
+          identifier: 'urn:li:userGeneratedContent',
+        },
+      ],
+    },
+  }
+
+  const response = await fetch(LINKEDIN_ASSETS_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-RestLi-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('LinkedIn Register Upload Error:', {
+      status: response.status,
+      error: errorText,
+    })
+    const error = new Error(`Media registration failed: ${errorText}`)
+    error.status = response.status
+    throw error
+  }
+
+  return response.json()
+}
+
+export const uploadMediaBinary = async (uploadUrl, accessToken, fileBuffer, mimeType) => {
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': mimeType,
+    },
+    body: fileBuffer,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('LinkedIn Media Binary Upload Error:', {
+      status: response.status,
+      error: errorText,
+    })
+    const error = new Error(`Media binary upload failed: ${errorText}`)
+    error.status = response.status
+    throw error
+  }
+
+  return true
+}
+
+export const createPost = async (accessToken, personUrn, text, mediaAsset = null, mediaType = 'NONE') => {
   const body = {
     author: personUrn,
     lifecycleState: 'PUBLISHED',
@@ -81,12 +145,27 @@ export const createPost = async (accessToken, personUrn, text) => {
         shareCommentary: {
           text: text,
         },
-        shareMediaCategory: 'NONE',
+        shareMediaCategory: mediaAsset ? mediaType : 'NONE',
       },
     },
     visibility: {
       'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
     },
+  }
+
+  if (mediaAsset) {
+    body.specificContent['com.linkedin.ugc.ShareContent'].media = [
+      {
+        status: 'READY',
+        description: {
+          text: text.substring(0, 100),
+        },
+        media: mediaAsset,
+        title: {
+          text: 'Media Content',
+        },
+      },
+    ]
   }
 
   const response = await fetch(LINKEDIN_UGC_POST_URL, {
