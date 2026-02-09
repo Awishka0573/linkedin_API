@@ -51,7 +51,7 @@ const DashboardLayout = () => {
             profile={profile}
           />
           <main className="flex-1 px-6 py-8">
-            <Outlet />
+            <Outlet context={{ isLinkedInConnected, profile, onDisconnect: handleDisconnect }} />
           </main>
         </div>
       </div>

@@ -1,32 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useOutletContext } from 'react-router-dom'
 
 const Posts = () => {
+    const { profile } = useOutletContext()
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-    const [profile, setProfile] = useState(null)
-    const [loading, setLoading] = useState(true)
+    const loading = false // Managed by layout
     const [postContent, setPostContent] = useState('')
     const [isPosting, setIsPosting] = useState(false)
     const [postStatus, setPostStatus] = useState({ type: '', message: '' })
-
-    useEffect(() => {
-        const checkStatus = async () => {
-            try {
-                const response = await fetch(`${apiBase}/api/profile`, {
-                    credentials: 'include',
-                })
-                if (response.ok) {
-                    const data = await response.json()
-                    setProfile(data.profile)
-                }
-            } catch (err) {
-                console.error('Failed to fetch profile:', err)
-            } finally {
-                setLoading(false)
-            }
-        }
-        checkStatus()
-    }, [apiBase])
 
     const handleCreatePost = async (e) => {
         e.preventDefault()

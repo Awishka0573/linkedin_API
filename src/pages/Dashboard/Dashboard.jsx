@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 
 const Dashboard = () => {
+  const { profile, onDisconnect } = useOutletContext()
+  const [loading, setLoading] = useState(false)
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
   const authUrl = `${apiBase}/auth/linkedin`
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [showSuccess, setShowSuccess] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
@@ -22,25 +22,7 @@ const Dashboard = () => {
       // Hide success message after 5 seconds
       setTimeout(() => setShowSuccess(false), 5000)
     }
-
-    const checkStatus = async () => {
-      try {
-        const response = await fetch(`${apiBase}/api/profile`, {
-          credentials: 'include',
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setProfile(data.profile)
-        }
-      } catch (err) {
-        console.error('Failed to fetch profile:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkStatus()
-  }, [apiBase, location.search, navigate])
+  }, [location.search, navigate])
 
   return (
     <>
@@ -84,19 +66,7 @@ const Dashboard = () => {
                     </span>
                   </div>
                   <button
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(`${apiBase}/auth/linkedin/disconnect`, {
-                          method: 'POST',
-                          credentials: 'include',
-                        })
-                        if (response.ok) {
-                          setProfile(null)
-                        }
-                      } catch (err) {
-                        console.error('Failed to disconnect:', err)
-                      }
-                    }}
+                    onClick={onDisconnect}
                     className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     Disconnect

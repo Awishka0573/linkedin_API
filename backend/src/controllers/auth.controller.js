@@ -13,6 +13,11 @@ const ensureLinkedInConfig = () => {
 export const startLinkedInAuth = (req, res, next) => {
   try {
     ensureLinkedInConfig()
+
+    // Clear any existing cookies to start fresh
+    res.clearCookie('li_access_token')
+    res.clearCookie('li_oauth_state')
+
     const state = crypto.randomBytes(16).toString('hex')
     res.cookie('li_oauth_state', state, {
       httpOnly: true,

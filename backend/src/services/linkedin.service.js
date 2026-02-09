@@ -10,6 +10,8 @@ export const createLinkedInAuthUrl = (state) => {
     client_id: env.LINKEDIN_CLIENT_ID,
     redirect_uri: env.LINKEDIN_REDIRECT_URI,
     scope: 'openid profile email w_member_social',
+    prompt: 'select_account consent',
+    max_age: 0,
     state,
   })
 

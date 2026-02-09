@@ -1,35 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 
 const Profile = () => {
+  const { profile } = useOutletContext()
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
   const authUrl = `${apiBase}/auth/linkedin`
-  const [profile, setProfile] = useState(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await fetch(`${apiBase}/api/profile`, {
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}))
-          throw new Error(data.error || 'Failed to fetch profile')
-        }
-
-        const data = await response.json()
-        setProfile(data.profile)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadProfile()
-  }, [apiBase])
+  const loading = false // Profile is now handled by layout
+  const error = ''
 
   const formatLocale = (locale) => {
     if (!locale) return 'N/A'
