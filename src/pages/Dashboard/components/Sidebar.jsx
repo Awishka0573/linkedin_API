@@ -28,6 +28,9 @@ const Sidebar = ({ isLinkedInConnected, onDisconnect }) => {
         <NavLink className={navClass} to="/dashboard/events">
           Events
         </NavLink>
+        <NavLink className={navClass} to="/dashboard/ad-library">
+          Ad Library
+        </NavLink>
         <button className="rounded-lg px-3 py-2 text-left transition hover:bg-slate-100">Scheduler</button>
         <button className="rounded-lg px-3 py-2 text-left transition hover:bg-slate-100">Analytics</button>
       </nav>

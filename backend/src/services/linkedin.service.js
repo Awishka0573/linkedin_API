@@ -195,7 +195,14 @@ export const createPost = async (accessToken, personUrn, text, mediaAsset = null
 }
 
 export const createLinkedInEvent = async (accessToken, eventData) => {
-  // LinkedIn REST API (versioned) expects a different structure than v2
+  const startTime = Number(eventData.eventSchedule?.start)
+  const endTime = Number(eventData.eventSchedule?.end)
+
+  if (isNaN(startTime) || isNaN(endTime)) {
+    throw new Error('Invalid event schedule times provided.')
+  }
+
+  // Construct payload specifically for the versioned REST API as per docs
   const payload = {
     name: {
       localized: {
@@ -217,20 +224,34 @@ export const createLinkedInEvent = async (accessToken, eventData) => {
         language: 'en'
       }
     },
-    type: {
-      'com.linkedin.events.OnlineEvent': {
-        onlineEventUrl: eventData.onlineEventUrl
-      }
-    },
-    organizer: eventData.owner, // urn:li:person:...
-    startsAt: eventData.eventSchedule.start,
-    endsAt: eventData.eventSchedule.end,
-    discoveryMode: 'LISTED'
+    organizer: eventData.owner,
+    startsAt: startTime,
+    discoveryMode: eventData.visibility === 'PUBLIC' ? 'LISTED' : 'UNLISTED'
   }
 
-  console.log('Creating LinkedIn Event with refined REST payload:', JSON.stringify(payload, null, 2))
+  if (eventData.eventType === 'ONLINE') {
+    payload.type = {
+      online: {
+        format: {
+          external: {
+            endsAt: endTime,
+            url: eventData.onlineEventUrl
+          }
+        }
+      }
+    }
+  } else {
+    payload.type = {
+      inPerson: {
+        endsAt: endTime,
+        address: {}, // Address would be added here
+        url: '' // Optional URL for in-person events
+      }
+    }
+  }
 
-  // LinkedIn Events API requires the LinkedIn-Version header for versioned APIs
+  console.log('Creating LinkedIn Event with 202601 REFINED payload:', JSON.stringify(payload, null, 2))
+
   const response = await fetch(LINKEDIN_EVENTS_URL, {
     method: 'POST',
     headers: {

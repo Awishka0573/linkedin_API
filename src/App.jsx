@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard/Dashboard'
 import Profile from './pages/Dashboard/Profile'
 import Posts from './pages/Dashboard/Posts'
 import Events from './pages/Dashboard/Events'
+import AdLibrary from './pages/Dashboard/AdLibrary'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="profile" element={<Profile />} />
         <Route path="posts" element={<Posts />} />
         <Route path="events" element={<Events />} />
+        <Route path="ad-library" element={<AdLibrary />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
